@@ -1,0 +1,6 @@
+dependencies:
+- name: diagrid-dapr-injector
+  repository: file://../diagrid-dapr-injector
+  version: 0.1.0
+digest: sha256:7dfef4a14654914ebd9f00543f885c10072b13aa37f653b05ff6a4d327f9c582
+generated: "2024-09-25T00:54:13.013753-05:00"

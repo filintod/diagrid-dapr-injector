@@ -1,0 +1,52 @@
+# NOTE: THIS FILE IS JUST FOR REFERENCE. DO NOT USE IT TO OVERRIDE VALUES.
+# INSTEAD, OVERRIDE THE VALUES IN YOUR OWN VALUES.YAML FILE.
+dapr:
+  image:
+    registry: ghcr.io/dapr
+    name: daprd
+    tag: "1.13.5"
+    pullPolicy: IfNotPresent
+  controlPlaneNamespace: "" # default is Release.Namespace (ie dapr-system)
+  controlPlaneTrustDomain: cluster.local # should be the same as dapr installed one
+  daprTrustAnchors: "" 
+  
+  # from dapr sidecar injector charts/dapr/sidecar-injector/values.yaml
+  kubeClusterDomain: cluster.local # should be the same as your cluster domain. Use to create the service addresses. 
+  sidecarDropALLCapabilities: false
+  
+  # from dapr global config charts/dapr/values.yaml
+  actors:
+    enabled: true
+    serviceName: placement # either placement or scheduler
+    serviceAddress: "dapr-placement-server:50005" # or dapr-scheduler-server:50006
+  reminders:
+    serviceName: "" # either placement or scheduler
+    serviceAddress: "dapr-placement-server:50005" # or dapr-scheduler-server:50006
+  scheduler: 
+    enabled: true
+    # replicaCount: 0 # if not provided or <= 0 will default to 1 for non-HA and 3 for HA
+  ha: 
+    enabled: false # mainly needed for scheduler to create list of services
+  mtls: 
+    enabled: true
+  prometheus:
+    enabled: true
+    port: 9090
+  seccompProfile: ""
+
+# Example pod annotations that should be added to the pod template of 
+# your application workloads (deployments, statefulsets, etc). For example:
+#
+# spec:
+#   template:
+#     metadata:
+#       annotations:
+#         {{- toYaml .Values.podAnnotations | nindent 8 }}
+#
+# And can be passed to our dapr.daprd_container helper
+# Full list of annotations: https://docs.dapr.io/reference/arguments-annotations-overview/
+podAnnotations:
+  dapr.io/enabled: "true" # REQUIRED
+  dapr.io/app-id: "myapp" # REQUIRED
+  dapr.io/app-port: "5000"
+  dapr.io/enable-metrics: "true"
