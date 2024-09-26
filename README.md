@@ -21,7 +21,7 @@ In your Helm chart's `Chart.yaml` file, add the following dependency:
 dependencies:
   - name: diagrid-dapr-injector
     version: 0.1.0
-    repository: file://../charts/diagrid-dapr-injector
+    repository: file://../diagrid-dapr-injector  # this is the path to the local chart on your filesystem or a remote chart repository
 ```
 
 Update your Helm chart:
