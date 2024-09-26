@@ -99,11 +99,13 @@ For a complete list of configuration options, refer to the `templates/_helpers.t
 
 ### Trust Anchors
 
-Trust anchors are essential for verifying the authenticity of the Dapr control plane. These anchors are provided to the Dapr sidecar injector via the daprTrustAnchors field.
+Trust anchors are essential for verifying the authenticity of the Dapr control plane.
 
 By default, trust anchors are not explicitly configured. In such cases, the Dapr sidecar injector will utilize the default trust anchors for the control plane, provided that both the control plane and the workload reside in the same namespace.
 
-However, if the Dapr control plane operates in a different namespace than the workload, you must manually supply the trust anchors to the sidecar injector through the daprTrustAnchors field. To retrieve the trust anchors from the Dapr control plane namespace within a Kubernetes cluster, run the following command:
+However, if the Dapr control plane operates in a different namespace than the workload, you must manually supply the trust anchors to the sidecar injector through the `dapr.trustAnchors` field. 
+
+To retrieve the trust anchors from the Dapr control plane namespace within a Kubernetes cluster, run the following command:
 
 ```bash
 kubectl get secret -n dapr-system dapr-trust-bundle -o jsonpath="{.data['ca\.crt']}" | base64 -d | tee /tmp/trust-anchors.crt
@@ -111,7 +113,8 @@ kubectl get secret -n dapr-system dapr-trust-bundle -o jsonpath="{.data['ca\.crt
 
 ### Passing the Trust Anchors to the Dapr Sidecar Injector
 
-You can pass the trust anchors to the Dapr sidecar injector by setting the `dapr.trustAnchors` field in the `values.yaml` file.
+If the workload is in a different namespace than the Dapr control plane, you can pass the trust anchors to the Dapr sidecar injector by setting the `dapr.trustAnchors` field in the `values.yaml` file:
+
 
 ```yaml
 dapr:
@@ -122,7 +125,7 @@ dapr:
     -----END CERTIFICATE-----
 ```
 
-Or by passing via helm install/upgrade `set` command. For example, above we saved the trust anchors to a file `/tmp/trust-anchors.crt`, and now we can pass it to the Dapr sidecar injector:
+Alternatively, you can pass the trust anchors via the Helm install/upgrade `set` command. For example, if you saved the trust anchors to a file `/tmp/trust-anchors.crt`, you can pass it to the Dapr sidecar injector as follows:
 
 ```bash
 # also showing passing the image tag, custom control plane namespace, and the trust anchors from a file
