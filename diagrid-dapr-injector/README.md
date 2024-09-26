@@ -101,9 +101,11 @@ For a complete list of configuration options, refer to the `templates/_helpers.t
 
 Trust anchors are essential for verifying the authenticity of the Dapr control plane.
 
-By default, trust anchors are not explicitly configured. In such cases, the Dapr sidecar injector will utilize the default trust anchors for the control plane, provided that both the control plane and the workload reside in the same namespace.
+By default, this sidecar injector library does not require explicit trust anchor configuration when the Dapr control plane and the workload are in the same namespace. In this scenario, the sidecar injector automatically utilizes the default trust anchors for the control plane via the Kubernetes downward API.
 
-However, if the Dapr control plane operates in a different namespace than the workload, you must manually supply the trust anchors to the sidecar injector through the `dapr.trustAnchors` field. 
+However, manual configuration of trust anchors is necessary when the Dapr control plane operates in a different namespace than the workload.
+
+In this situation, you must manually supply the trust anchors to the sidecar injector through the `dapr.trustAnchors` field in your values file or Helm command.
 
 To retrieve the trust anchors from the Dapr control plane namespace within a Kubernetes cluster, run the following command:
 
