@@ -31,6 +31,6 @@ spec:
           value: "50001"
         - name: APP_PROTOCOL
           value: http
-      {{- include "diagrid.dapr.sidecar" (dict "podAnnotations" .Values.podAnnotations "values" .Values "namespace" .Release.Namespace) | indent 6 }}
+      {{- include "diagrid.dapr.sidecar" (dict "podAnnotations" .Values.podAnnotations "helmCtx" .) | indent 6 }}
       volumes:
       {{- include "diagrid.dapr.identity-token-volume" . | indent 6 }}

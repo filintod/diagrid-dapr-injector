@@ -76,14 +76,14 @@ spec:
       - name: {{ .Chart.Name }}
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
-      {{ include "diagrid-dapr-injector.sidecar" (dict "podAnnotations" .Values.podAnnotations "values" .Values "namespace" (default .Release.Namespace .Values.controlPlaneNamespace)) | nindent 6 }}
+      {{ include "diagrid-dapr-injector.sidecar" (dict "podAnnotations" .Values.podAnnotations "helmCtx" .) | nindent 6 }}
       volumes:
         {{ include "diagrid-dapr-injector.volumes" . | nindent 8 }}  
 ```
 
 ## Configuration
 
-The default values are defined in the `templates/_helpers.tpl` file. Key configuration options include:
+The default values are defined in the [templates/_helpers.tpl](diagrid-dapr-injector/templates/_helpers.tpl) file. Key configuration options include:
 
 - `dapr.image`: Dapr sidecar image settings
 - `dapr.controlPlaneNamespace`: Namespace for the Dapr control plane

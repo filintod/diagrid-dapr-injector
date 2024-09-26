@@ -55,15 +55,15 @@ dapr:
 
 {{/* "diagrid.dapr.sidecar" creates the daprd container to be appended to the pod template contaienr
      It receives a dictionary with the following optional parameters:
-     - .values (the parent chart .Values)
+     - .helmCtx (the parent chart context `.`)
      - .podAnnotations: the pod annotations from the deployment pod template
 
     Call this with:
     {{ include "diagrid.dapr.sidecar" (dict "podAnnotations" .Values.podAnnotations "values" .Values "namespace" .Release.Namespace) }}
 */}}
 {{- define "diagrid.dapr.sidecar" }}
-{{-   $values := mergeOverwrite (include "dapr.defaultValues" . | fromYaml) .values }}
-{{-   $controlPlaneNamespace := default .namespace $values.dapr.controlPlaneNamespace }}
+{{-   $values := mergeOverwrite (include "dapr.defaultValues" . | fromYaml) .helmCtx.Values }}
+{{-   $controlPlaneNamespace := default .helmCtx.Release.Namespace $values.dapr.controlPlaneNamespace }}
 {{-   $annotations := .podAnnotations | default dict }}
 {{- /* Daprd Default Ports: https://github.com/dapr/dapr/blob/b4456dad3f8e085360e0aae23b6a5386d38fd67c/pkg/injector/patcher/sidecar.go#L58 */}}
 {{-   $daprPublicPort       := 3501 }}
@@ -250,35 +250,19 @@ dapr:
       path: /v1.0/healthz
       port: {{ $daprPublicPort }}
       scheme: HTTP
-    {{- if ne (index $annotations "dapr.io/sidecar-liveness-probe-delay-seconds" | default "3") "3" }}
-    initialDelaySeconds: {{ index $annotations "dapr.io/sidecar-liveness-probe-delay-seconds" }}
-    {{- end }}
-    {{- if ne (index $annotations "dapr.io/sidecar-liveness-probe-timeout-seconds" | default "3") "3" }}
-    timeoutSeconds: {{ index $annotations "dapr.io/sidecar-liveness-probe-timeout-seconds" }}
-    {{- end }}
-    {{- if ne (index $annotations "dapr.io/sidecar-liveness-probe-period-seconds" | default "6") "6" }}
-    periodSeconds: {{ index $annotations "dapr.io/sidecar-liveness-probe-period-seconds" }}
-    {{- end }}
-    {{- if ne (index $annotations "dapr.io/sidecar-liveness-probe-threshold" | default "3") "3" }}
-    failureThreshold: {{ index $annotations "dapr.io/sidecar-liveness-probe-threshold" }}
-    {{- end }}
+    initialDelaySeconds: {{ (index $annotations "dapr.io/sidecar-liveness-probe-delay-seconds" | default "3" ) | int }}
+    timeoutSeconds: {{ (index $annotations "dapr.io/sidecar-liveness-probe-timeout-seconds" | default "3" ) | int }}
+    periodSeconds: {{ (index $annotations "dapr.io/sidecar-liveness-probe-period-seconds" | default "6" ) | int }}
+    failureThreshold: {{ (index $annotations "dapr.io/sidecar-liveness-probe-threshold" | default "3" ) | int }}
   readinessProbe:
     httpGet:
       path: /v1.0/healthz
       port: {{ $daprPublicPort }}
       scheme: HTTP
-    {{- if ne (index $annotations "dapr.io/sidecar-readiness-probe-delay-seconds" | default "3") "3" }}
-    initialDelaySeconds: {{ index $annotations "dapr.io/sidecar-readiness-probe-delay-seconds" }}
-    {{- end }}
-    {{- if ne (index $annotations "dapr.io/sidecar-readiness-probe-timeout-seconds" | default "3") "3" }}
-    timeoutSeconds: {{ index $annotations "dapr.io/sidecar-readiness-probe-timeout-seconds" }}
-    {{- end }}
-    {{- if ne (index $annotations "dapr.io/sidecar-readiness-probe-period-seconds" | default "6") "6" }}
-    periodSeconds: {{ index $annotations "dapr.io/sidecar-readiness-probe-period-seconds" }}
-    {{- end }}
-    {{- if ne (index $annotations "dapr.io/sidecar-readiness-probe-threshold" | default "3") "3" }}
-    failureThreshold: {{ index $annotations "dapr.io/sidecar-readiness-probe-threshold" }}
-    {{- end }}
+    initialDelaySeconds: {{ (index $annotations "dapr.io/sidecar-readiness-probe-delay-seconds" | default "3" ) | int }}
+    timeoutSeconds: {{ (index $annotations "dapr.io/sidecar-readiness-probe-timeout-seconds" | default "3" ) | int }}
+    periodSeconds: {{ (index $annotations "dapr.io/sidecar-readiness-probe-period-seconds" | default "6" ) | int }}
+    failureThreshold: {{ (index $annotations "dapr.io/sidecar-readiness-probe-threshold" | default "3" ) | int }}
   ports:
   - containerPort: {{ $daprHttpPort }}
     name: dapr-http
@@ -348,6 +332,7 @@ dapr:
 
 {{- define "diagrid.dapr.identity-token-volume" }}
 {{-   $values := mergeOverwrite (include "dapr.defaultValues" . | fromYaml) .Values }}
+{{-   $controlPlaneNamespace := default .Release.Namespace $values.dapr.controlPlaneNamespace }}
 - name: dapr-identity-token
   projected:
     defaultMode: 420
@@ -355,5 +340,5 @@ dapr:
     - serviceAccountToken:
         path: token
         expirationSeconds: 7200
-        audience: spiffe://{{ $values.dapr.controlPlaneTrustDomain }}/ns/{{ $values.dapr.controlPlaneNamespace }}/dapr-sentry
+        audience: spiffe://{{ $values.dapr.controlPlaneTrustDomain }}/ns/{{ $controlPlaneNamespace }}/dapr-sentry
 {{- end }}
