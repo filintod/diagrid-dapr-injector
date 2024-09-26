@@ -97,6 +97,38 @@ The default values are defined in the `templates/_helpers.tpl` file. Key configu
 
 For a complete list of configuration options, refer to the `templates/_helpers.tpl` file in the chart.
 
+### Trust Anchors
+
+The trust anchors are used to verify the authenticity of the Dapr control plane. The trust anchors are passed to the Dapr sidecar injector in the `daprTrustAnchors` field.
+By default, the trust anchors are not set, and the Dapr sidecar injector will use the default trust anchors for the Dapr control plane. This works as long as the Dapr control plane is in the same namespace as the workload.
+
+If the Dapr control plane is in a different namespace than the workload, the trust anchors can be passed to the Dapr sidecar injector in the `daprTrustAnchors` field. 
+You can get the trust anchors data from the Dapr control plane namespace in a Kubernetes cluster by running the following command:
+
+```bash
+kubectl get secret -n dapr-system dapr-trust-bundle -o jsonpath="{.data['ca\.crt']}" | base64 -d | tee /tmp/trust-anchors.crt
+```
+
+### Passing the Trust Anchors to the Dapr Sidecar Injector
+
+You can pass the trust anchors to the Dapr sidecar injector by setting the `dapr.trustAnchors` field in the `values.yaml` file.
+
+```yaml
+dapr:
+  trustAnchors: |
+    -----BEGIN CERTIFICATE-----
+    MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5+1q1Qy9X/PvO8Vc0P9M
+    ...
+    -----END CERTIFICATE-----
+```
+
+Or by passing via helm install/upgrade `set` command. For example, above we saved the trust anchors to a file `/tmp/trust-anchors.crt`, and now we can pass it to the Dapr sidecar injector:
+
+```bash
+# also showing passing the image tag, custom control plane namespace, and the trust anchors from a file
+helm template --set dapr.controlPlaneNamespace=dapr-system-3 --set "dapr.image.tag=1.14.4" --set-file dapr.trustAnchors=/tmp/trust-anchors.crt -n dapr-system-3 deploy-sample 
+```
+
 ## Support
 
 For issues, feature requests, or questions, please file an issue in the [GitHub repository](https://github.com/diagridio/diagrid-dapr-injector).

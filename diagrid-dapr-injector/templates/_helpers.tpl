@@ -26,7 +26,7 @@ dapr:
     pullPolicy: IfNotPresent
   controlPlaneNamespace: ""
   controlPlaneTrustDomain: cluster.local
-  daprTrustAnchors: "" 
+  trustAnchors: "" 
   
   # from dapr sidecar injector charts/dapr/sidecar-injector/values.yaml
   kubeClusterDomain: cluster.local
@@ -43,7 +43,7 @@ dapr:
   scheduler: 
     enabled: true
   ha: 
-    enabled: true # mainly needed for scheduler to create list of services
+    enabled: true # needed for scheduler to create list of services
   mtls: 
     enabled: true
   logAsJson: false
@@ -65,9 +65,17 @@ dapr:
 {{-   $values := mergeOverwrite (include "dapr.defaultValues" . | fromYaml) .values }}
 {{-   $controlPlaneNamespace := default .namespace $values.dapr.controlPlaneNamespace }}
 {{-   $annotations := .podAnnotations | default dict }}
+{{- /* Daprd Default Ports: https://github.com/dapr/dapr/blob/b4456dad3f8e085360e0aae23b6a5386d38fd67c/pkg/injector/patcher/sidecar.go#L58 */}}
+{{-   $daprPublicPort       := 3501 }}
+{{-   $daprHttpPort         := 3500 }}
+{{-   $daprGrpcPort         := 50001 }}
+{{-   $daprInternalGrpcPort := 50002 }}
+{{-   $schedulerPort        := 50006 }}
+{{-   $placementPort        := 50005 }}
+{{-   $daprMetricsPort      := $values.dapr.prometheus.port | default 9090 }}
 {{- /* Dapr services address https://github.com/dapr/dapr/blob/68d9f898f25d7c3762b747f6c4a49be8e7b48eda/pkg/injector/patcher/services.go#L28  */}}
-{{-   $placementServiceAddress     := include "dapr.serviceAddress" (dict "name" "dapr-placement-server" "controlPlaneNamespace" $controlPlaneNamespace "clusterDomain" $values.dapr.kubeClusterDomain "port" 50005) }}
-{{-   $daprSchedulerServiceAddress := include "dapr.serviceAddress" (dict "name" "dapr-scheduler-server" "controlPlaneNamespace" $controlPlaneNamespace "clusterDomain" $values.dapr.kubeClusterDomain "port" 50006) }}
+{{-   $placementServiceAddress     := include "dapr.serviceAddress" (dict "name" "dapr-placement-server" "controlPlaneNamespace" $controlPlaneNamespace "clusterDomain" $values.dapr.kubeClusterDomain "port" $placementPort) }}
+{{-   $daprSchedulerServiceAddress := include "dapr.serviceAddress" (dict "name" "dapr-scheduler-server" "controlPlaneNamespace" $controlPlaneNamespace "clusterDomain" $values.dapr.kubeClusterDomain "port" $schedulerPort) }}
 {{-   $daprAPIServerServiceAddress := include "dapr.serviceAddress" (dict "name" "dapr-api"              "controlPlaneNamespace" $controlPlaneNamespace "clusterDomain" $values.dapr.kubeClusterDomain "port" 443) }}
 {{-   $daprSentryServiceAddress    := include "dapr.serviceAddress" (dict "name" "dapr-sentry"           "controlPlaneNamespace" $controlPlaneNamespace "clusterDomain" $values.dapr.kubeClusterDomain "port" 443) }}
 {{- /* Special handling for placement/actors/reminders service address */}}
@@ -86,12 +94,6 @@ dapr:
 {{-   if $values.dapr.reminders.serviceName }}
 {{-     $remindersService = printf "%s:%s" $values.dapr.reminders.serviceName (ternary $placementServiceAddress $daprSchedulerServiceAddress (eq $values.dapr.reminders.serviceName "placement")) }}
 {{-   end }}
-{{- /* Daprd Default Ports: https://github.com/dapr/dapr/blob/b4456dad3f8e085360e0aae23b6a5386d38fd67c/pkg/injector/patcher/sidecar.go#L58 */}}
-{{-   $daprPublicPort       := 3501 }}
-{{-   $daprHttpPort         := 3500 }}
-{{-   $daprGrpcPort         := 50001 }}
-{{-   $daprInternalGrpcPort := 50002 }}
-{{-   $daprMetricsPort      := $values.dapr.prometheus.port | default 9090 }}
 {{-   $daprdImage := index $annotations "dapr.io/sidecar-image" }}
 {{-   if not $daprdImage }}
 {{-     $daprdImage = printf "%s/%s:%s" ($values.dapr.image.registry | default "ghcr.io/dapr") ($values.dapr.image.name | default "daprd") (required "dapr.image.tag is required" $values.dapr.image.tag) }}
@@ -196,8 +198,9 @@ dapr:
       fieldRef:
         fieldPath: metadata.namespace
   - name: DAPR_TRUST_ANCHORS
-    {{- if $values.dapr.daprTrustAnchors }}
-    value: {{ $values.dapr.daprTrustAnchors }}
+    {{- if $values.dapr.trustAnchors }}
+    value: |
+      {{ $values.dapr.trustAnchors | nindent 6 | trim}}
     {{- else }}
     valueFrom:
       secretKeyRef:
@@ -237,9 +240,9 @@ dapr:
   {{- if and (semverCompare ">=1.14.0" $values.dapr.image.tag) ($values.dapr.scheduler.enabled) }}
   - name: DAPR_SCHEDULER_HOST_ADDRESS
     {{- if $values.dapr.ha.enabled }}
-    value: {{ include "dapr.headlessServiceAddressCSV" (dict "name" "dapr-scheduler-server" "controlPlaneNamespace" $controlPlaneNamespace "clusterDomain" $values.dapr.kubeClusterDomain "len" 3 "port" 50006) }}
+    value: {{ include "dapr.headlessServiceAddressCSV" (dict "name" "dapr-scheduler-server" "controlPlaneNamespace" $controlPlaneNamespace "clusterDomain" $values.dapr.kubeClusterDomain "len" 3 "port" $schedulerPort) }}
     {{- else }}
-    value: {{ include "dapr.headlessServiceAddressCSV" (dict "name" "dapr-scheduler-server" "controlPlaneNamespace" $controlPlaneNamespace "clusterDomain" $values.dapr.kubeClusterDomain "len" 1 "port" 50006) }}
+    value: {{ include "dapr.headlessServiceAddressCSV" (dict "name" "dapr-scheduler-server" "controlPlaneNamespace" $controlPlaneNamespace "clusterDomain" $values.dapr.kubeClusterDomain "len" 1 "port" $schedulerPort) }}
     {{- end }}
   {{- end }}
   livenessProbe:
