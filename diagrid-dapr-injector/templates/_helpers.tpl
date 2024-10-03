@@ -190,7 +190,7 @@ dapr:
   - --enable-mtls
   {{- end }}
   {{- if semverCompare ">=1.14.0" $values.dapr.image.tag }}
-  - --graceful-shutdown-seconds={{ index $annotations "dapr.io/graceful-shutdown-seconds" | default "-1" }}
+  - --dapr-graceful-shutdown-seconds={{ index $annotations "dapr.io/graceful-shutdown-seconds" | default "-1" }}
   {{- end }}
   env:
   - name: NAMESPACE
