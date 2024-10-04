@@ -13,6 +13,14 @@ The Diagrid Dapr Injector is a Helm library chart designed to inject the Dapr si
 
 This chart is not intended for standalone use. Instead, incorporate it as a dependency in your existing Helm charts.
 
+### Step 0: Set-up the Dapr control plane on the cluster
+
+Use Helm to install the Dapr control plane in your cluster. For example to install the OSS Dapr version, see example below. Additional instructions found in [docs](https://docs.dapr.io/operations/hosting/kubernetes/kubernetes-deploy/).
+
+``` bash
+helm install dapr dapr/dapr --version=1.14.4 --namespace dapr-system --create-namespace --set global.ha.enabled=false --set dapr_operator.watch_interval=3m --wait
+```
+
 ### Step 1: Add the Dependency
 
 In your Helm chart's `Chart.yaml` file, add the following dependency:
@@ -24,7 +32,7 @@ dependencies:
     repository: file://../diagrid-dapr-injector  # this is the path to the local chart on your filesystem or a remote chart repository
 ```
 
-Update your Helm chart:
+Update your Helm chart dependencies:
 
 ```bash
 helm dependency update
@@ -48,6 +56,22 @@ podAnnotations:
   dapr.io/app-id: "myapp"
   dapr.io/app-port: "5000"
 ```
+
+#### Configuration Values
+
+The default values are defined in the [templates/_helpers.tpl](diagrid-dapr-injector/templates/_helpers.tpl) file. Key configuration options include:
+
+- `dapr.image`: Dapr sidecar image settings
+- `dapr.controlPlaneNamespace`: Namespace for the Dapr control plane
+- `dapr.controlPlaneTrustDomain`: Trust domain for the cluster
+- `dapr.actors`: Actor service configuration
+- `dapr.reminders`: Reminder service configuration
+- `dapr.scheduler`: Scheduler settings
+- `dapr.ha`: High availability settings
+- `dapr.mtls`: mTLS configuration
+- `dapr.prometheus`: Prometheus metrics settings
+
+For a complete list of configuration options, refer to the `templates/_helpers.tpl` file in the chart.
 
 ### Step 3: Update Workload Templates
 
@@ -81,23 +105,7 @@ spec:
         {{ include "diagrid-dapr-injector.volumes" . | nindent 8 }}  
 ```
 
-## Configuration
-
-The default values are defined in the [templates/_helpers.tpl](diagrid-dapr-injector/templates/_helpers.tpl) file. Key configuration options include:
-
-- `dapr.image`: Dapr sidecar image settings
-- `dapr.controlPlaneNamespace`: Namespace for the Dapr control plane
-- `dapr.controlPlaneTrustDomain`: Trust domain for the cluster
-- `dapr.actors`: Actor service configuration
-- `dapr.reminders`: Reminder service configuration
-- `dapr.scheduler`: Scheduler settings
-- `dapr.ha`: High availability settings
-- `dapr.mtls`: mTLS configuration
-- `dapr.prometheus`: Prometheus metrics settings
-
-For a complete list of configuration options, refer to the `templates/_helpers.tpl` file in the chart.
-
-### Trust Anchors
+### Step 4 (Optional): Add Trust Anchors
 
 Trust anchors are essential for verifying the authenticity of the Dapr control plane.
 
@@ -113,10 +121,9 @@ To retrieve the trust anchors from the Dapr control plane namespace within a Kub
 kubectl get secret -n dapr-system dapr-trust-bundle -o jsonpath="{.data['ca\.crt']}" | base64 -d | tee /tmp/trust-anchors.crt
 ```
 
-### Passing the Trust Anchors to the Dapr Sidecar Injector
+#### Passing the Trust Anchors to the Dapr Sidecar Injector
 
 If the workload is in a different namespace than the Dapr control plane, you can pass the trust anchors to the Dapr sidecar injector by setting the `dapr.trustAnchors` field in the `values.yaml` file:
-
 
 ```yaml
 dapr:
@@ -132,6 +139,20 @@ Alternatively, you can pass the trust anchors via the Helm install/upgrade `set`
 ```bash
 # also showing passing the image tag, custom control plane namespace, and the trust anchors from a file
 helm template --set dapr.controlPlaneNamespace=dapr-system-3 --set "dapr.image.tag=1.14.4" --set-file dapr.trustAnchors=/tmp/trust-anchors.crt -n dapr-system-3 deploy-sample 
+```
+
+### Step 5: Template Helm values and deploy Helm chart
+
+Check the results of your Helm chart by running the following command.
+
+```bash
+helm template <your-Helm-chart> <path-to-your-helm-chart>
+```
+
+Deploy your Helm chart with the diagrid-dapr-injector dependency after verifying the manifests are generated correctly.
+
+```bash
+helm install -f values.yaml <your-Helm-chart> <path-to-your-helm-chart>
 ```
 
 ## Support
