@@ -22,9 +22,9 @@ dapr:
   image:
     registry: ghcr.io/dapr
     name: daprd
-    tag: "1.13.5"
+    tag: "1.14.4"
     pullPolicy: IfNotPresent
-  controlPlaneNamespace: ""
+  controlPlaneNamespace: "dapr-system"
   controlPlaneTrustDomain: cluster.local
   trustAnchors: "" 
   
@@ -43,7 +43,7 @@ dapr:
   scheduler: 
     enabled: true
   ha: 
-    enabled: true # needed for scheduler to create list of services
+    enabled: false # needed for scheduler to create list of services
   mtls: 
     enabled: true
   logAsJson: false

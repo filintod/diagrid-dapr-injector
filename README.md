@@ -17,8 +17,10 @@ This chart is not intended for standalone use. Instead, incorporate it as a depe
 
 Use Helm to install the Dapr control plane in your cluster. For example to install the OSS Dapr version, see example below. Additional instructions found in [docs](https://docs.dapr.io/operations/hosting/kubernetes/kubernetes-deploy/).
 
+This can be installed without the Dapr sidecar injector control plane service since that will be added via the Helm Library Chart.
+
 ``` bash
-helm install dapr dapr/dapr --version=1.14.4 --namespace dapr-system --create-namespace --set global.ha.enabled=false --set dapr_operator.watch_interval=3m --wait
+helm install dapr dapr/dapr --version=1.14.4 --namespace dapr-system --create-namespace --set global.ha.enabled=false --set dapr_operator.watch_interval=3m --set dapr_sidecar_injector.enabled=false --wait
 ```
 
 ### Step 1: Add the Dependency
@@ -146,13 +148,21 @@ helm template --set dapr.controlPlaneNamespace=dapr-system-3 --set "dapr.image.t
 Check the results of your Helm chart by running the following command.
 
 ```bash
-helm template <your-Helm-chart> <path-to-your-helm-chart>
+helm template <your-Helm-chart> <path-to-your-helm-chart> -f values.yaml 
 ```
 
 Deploy your Helm chart with the diagrid-dapr-injector dependency after verifying the manifests are generated correctly.
 
 ```bash
 helm install -f values.yaml <your-Helm-chart> <path-to-your-helm-chart>
+```
+
+For example to test the sample Helm chart that is deployed in this repo, ensure the [values](deploy-sample/values.yaml) are updated correctly and then run the following:
+
+```bash
+cd deploy-sample
+helm template example-chart . -f values.yaml 
+helm install  example-chart . -f values.yaml
 ```
 
 ## Support

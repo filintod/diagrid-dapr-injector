@@ -25,9 +25,14 @@ serviceAccount:
   # If not set and create is true, a name is generated using the fullname template
   name: ""
 
+dapr:
+  image:
+    tag: "1.14.4"
+    pullPolicy: IfNotPresent
+  controlPlaneNamespace: "dapr-system" # default is Release.Namespace (ie dapr-system)
+
 podAnnotations: 
   dapr.io/app-id: service-dapr-system-x
-  dapr.io/config: dapr-crud-app
   dapr.io/enable-api-logging: "true"
   dapr.io/enabled: "true"
   dapr.io/log-as-json: "false"
